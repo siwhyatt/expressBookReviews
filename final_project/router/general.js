@@ -33,9 +33,26 @@ public_users.post("/register", (req,res) => {
 });
 
 // Get the book list available in the shop
-public_users.get('/',function (req, res) {
-    res.send(JSON.stringify(books,null,4));
+public_users.get('/', function (req, res) {
+    // Simulate an asynchronous operation to get the books
+    new Promise((resolve, reject) => {
+        // Assuming this could be a database call or some IO operation in a real scenario
+        if (books) {
+            resolve(books);
+        } else {
+            reject(new Error("Failed to retrieve books"));
+        }
+    })
+    .then(books => {
+        res.send(JSON.stringify(books, null, 4));
+    })
+    .catch(error => {
+        // Log the error and send a server error status code
+        console.error(error);
+        res.status(500).send("An error occurred while retrieving the books.");
+    });
 });
+
 
 // Get book details based on ISBN
 public_users.get('/isbn/:isbn',function (req, res) {
@@ -51,39 +68,67 @@ public_users.get('/isbn/:isbn',function (req, res) {
 // Get book details based on author
 public_users.get('/author/:author',function (req, res) {
     const author = req.params.author;
-    let filtered_authors = [];
-    for (let book in books) {
-    let details = books[book];
-    if (details.author === author) {
-            filtered_authors.push(details);
-        }
-    }
     
-    if (filtered_authors.length > 0) {
-        res.send(filtered_authors);
-    }
-    else {
-        res.send("No authors with that name!");
-    }
+    new Promise((resolve, reject) => {
+        if (!books) {
+            reject(new Error("Books data is unavailable"));
+        } else {
+            let filtered_authors = [];
+            for (let book in books) {
+                let details = books[book];
+                if (details.author === author) {
+                    filtered_authors.push(details);
+                }
+            }
+            resolve(filtered_authors);
+        }
+    })
+    .then(filtered_authors => {
+        if (filtered_authors.length > 0) {
+            res.send(filtered_authors);
+        }
+        else {
+            res.send(`No books by ${author} in the database`);
+        }
+    })
+    .catch(error => {
+        // Log the error and send a server error status code
+        console.error(error);
+        res.status(500).send("An error occurred while retrieving the books.");
+    });
 });
 
 // Get all books based on title
 public_users.get('/title/:title',function (req, res) {
     const title = req.params.title;
-    let filtered_title = [];
-    for (let book in books) {
-    let details = books[book];
-    if (details.title === title) {
-        filtered_title.push(details);
+
+    new Promise((resolve,reject) => {
+        if (!books) {
+            reject(new Error("Books data is unavailable"));
+        } else {
+            let filtered_title = [];
+            for (let book in books) {
+            let details = books[book];
+            if (details.title === title) {
+                filtered_title.push(details);
+                }
+            }
+            resolve(filtered_title);
         }
-    }
-    
-    if (filtered_title.length > 0) {
-        res.send(filtered_title);
-    }
-    else {
-        res.send("No books with that title!");
-    }
+    })
+    .then(filtered_title => {
+        if (filtered_title.length > 0) {
+            res.send(filtered_title);
+        }
+        else {
+            res.send(`The book ${title} is not in the database`);
+        }
+    })
+    .catch(error => {
+        // Log the error and send a server error status code
+        console.error(error);
+        res.status(500).send("An error occurred while retrieving the books.");
+    })
 });
 
 //  Get book review
